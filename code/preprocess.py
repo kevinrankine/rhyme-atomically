@@ -1,9 +1,16 @@
 import sys
 import string
 import re
+from pprint import pprint
 
 PUNCTUATION = '!"#$%&\'()*+,-./:;=?@\\^_`{|}~'
 DELIMS = set(['<nv>', '<nl>'])
+
+def is_good_verse(verse):
+    cond1 = 'interlude' not in verse.lower() and 'chorus' not in verse.lower() and 'intro' not in verse.lower() and 'outro' not in verse.lower()
+    cond2 = len(verse.split('\n')) > 1
+
+    return cond1 and cond2
 
 def mark_new_verses(song):
     brackets = re.findall('(\[.+\] <nl>)', song)
@@ -14,8 +21,10 @@ def mark_new_verses(song):
     return song
 
 def mark_new_lines(song):
+    verses = filter(is_good_verse, song.split('\n\n'))
+    song = '\n\n'.join(verses)
+    
     lines = song.split('\n')
-    # lines = filter(lambda x : x != '', lines)
     lines = map(lambda x : x.strip() + ' <nl>',
                     filter(lambda x : len(x) > 3, lines))
     lines = lines[4:]
