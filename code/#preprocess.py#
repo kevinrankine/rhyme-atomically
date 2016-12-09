@@ -66,7 +66,7 @@ def main(in_file, out_file):
         song = song.translate(None, PUNCTUATION).lower()
 
         song = remove_redundant_tokens(song)
-        # song = '<s> ' * 5 + song + ' <\s>' * 5 # start/end tags
+        song = '<song + ' <\s>' * 5 # start/end tags
         
         out_file.write(song + ' \n')
         
