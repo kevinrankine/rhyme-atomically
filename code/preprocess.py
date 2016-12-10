@@ -17,6 +17,7 @@ def mark_new_verses(song):
         
     for bracket in brackets:
         song = song.replace(bracket, ' <nv> ')
+        
 
     return song
 
@@ -46,7 +47,7 @@ def remove_redundant_tokens(song):
         if b - a <= 1:
             ii = ii + 1
         else:
-            tokens = tokens[:a] + ['<nv>'] + tokens[b:]
+            tokens = tokens[:a] + ['<nl>'] + tokens[b:] # used to be <nv> substitution, removing nv char
             ii = a
                 
     song = ' '.join(tokens)
