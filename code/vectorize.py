@@ -3,8 +3,8 @@ import h5py
 from nltk.model import build_vocabulary
 import numpy as np
 
-WORD_VECTOR_FILE = 'data/lyrics_vectors.txt'
-LYRICS_FILE = 'data/processed-lyrics.txt'
+WORD_VECTOR_FILE = '/mnt/lyrics_vectors.txt'
+LYRICS_FILE = '/mnt/processed-lyrics.txt'
 
 def load_word_vectors(word_vector_file, vocab):
     word_to_index = {}
@@ -62,11 +62,9 @@ def main(in_file_name):
 
     max_len = max(map(len, X))
     X = map(lambda x : (max_len - len(x)) * [word_to_index('<pad>')] + x, X)
-
-    print "The mean verse length is %d" % np.mean(map(len, X))
     
+    y = np.array(map(lambda x : x[1:] + [word_to_index('</s>')], X), dtype=np.int32)
     X = np.array(X, dtype=np.int32)
-    y = np.array(map(lambda x : x[1:], X), dtype=np.int32)
 
     with h5py.File('./data/data.hdf5', 'w') as f:
         f['X'] = X
