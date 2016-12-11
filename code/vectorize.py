@@ -3,14 +3,16 @@ import h5py
 from nltk.model import build_vocabulary
 import numpy as np
 
-WORD_VECTOR_FILE = '/mnt/lyrics_vectors.txt'
-LYRICS_FILE = '/mnt/processed-lyrics.txt'
+WORD_VECTOR_FILE = './data/50-vectors.txt'
+LYRICS_FILE = './data/processed-50-cent.txt'
 
 def load_word_vectors(word_vector_file, vocab):
     word_to_index = {}
     word_vectors = []
     
     with open(word_vector_file) as f:
+        print f.readline()
+        
         index = 1
         
         for line in f:
@@ -22,7 +24,9 @@ def load_word_vectors(word_vector_file, vocab):
                 
                 word_to_index[word] = index
                 index = index + 1
-
+            else:
+                pass
+                
     word_to_index['<unk>'] = len(word_to_index) + 1
     word_vectors.append([0 for _ in xrange(len(word_vectors[0]))])
 
@@ -42,29 +46,40 @@ def main(in_file_name):
     text = [val for sub in sentences for val in sub]
     text = filter(lambda x : x != '', text)
     
-    vocab = set(build_vocabulary(1000, text).keys())
+    vocab = build_vocabulary(1, text)
+    vocab = filter(lambda x : x[1] > 5, vocab.items())
+    vocab = map(lambda x : x[0], vocab)
+
+    print ("The vocabulary has %d words in it" % len(vocab))
+    
     word_to_index, word_vectors = load_word_vectors(WORD_VECTOR_FILE, vocab)
 
     inf = open(in_file_name, 'r')
 
     X = []
     
-    for song in inf:
-        verses = filter(lambda x : len(x) > 0, song.split('<nv>'))
+    for verse in inf:
+        verse = verse.split()
+        verse = map(word_to_index, verse)
         
-        for verse in verses:
-            verse = verse.split()
-            verse = map(word_to_index, verse)
+        X.append(verse)
 
-            X.append(verse)
+    print "The mean length of a verse is %d words" % np.mean(map(len, X))
+    print "The maximum length of a verse is %d words" % max(map(len, X))
+    print "The minimum length of a verse is %d words" % min(map(len, X))
 
-    X = filter(lambda x : len(x) <= 500, X)
+    min_len = 150
+    max_len = 300
 
-    max_len = max(map(len, X))
+    X = filter(lambda x : len(x) >= min_len and len(x) <= max_len, X)
+
+
     X = map(lambda x : (max_len - len(x)) * [word_to_index('<pad>')] + x, X)
     
     y = np.array(map(lambda x : x[1:] + [word_to_index('</s>')], X), dtype=np.int32)
     X = np.array(X, dtype=np.int32)
+
+    print "The training matrix is %dx%d" % (X.shape)
 
     with h5py.File('./data/data.hdf5', 'w') as f:
         f['X'] = X

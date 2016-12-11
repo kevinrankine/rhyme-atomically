@@ -12,14 +12,16 @@ def is_good_verse(verse):
 
     return cond1 and cond2
 
-def mark_new_verses(song):
-    brackets = re.findall('(\[.+\] <nl>)', song)
-        
-    for bracket in brackets:
-        song = song.replace(bracket, ' <nv> ')
-        
+def is_verse_header(line):
+    if re.match('(\[.+\] <nl>)', line):
+        return True
+    else:
+        return False
 
-    return song
+def split_verses(song):
+    verses = re.split('(\[.+\] <nl>)', song)
+
+    return verses
 
 def mark_new_lines(song):
     verses = filter(is_good_verse, song.split('\n\n'))
@@ -59,17 +61,24 @@ def main(in_file, out_file):
 
     for song in songs:
         song = mark_new_lines(song)
-        song = mark_new_verses(song)
         
-        song = ' '.join(song.split('\n')) # makes the song into a single line
-        song = ' '.join(song.split()) # convert all wsp to single wsp
-        song = song.strip() # remove leading or training wsp
-        song = song.translate(None, PUNCTUATION).lower()
+        verses = split_verses(song)
+        verses = filter(lambda x : not is_verse_header(x), verses)
+        verses = filter(lambda x : len(x) > 0, verses)
+        
+        for verse in verses:
+            verse = ' '.join(verse.split('\n')) # makes the verse into a single line
+            verse = ' '.join(verse.split()) # convert all wsp to single wsp
+            verse = verse.strip() # remove leading or training wsp
+            verse = verse.translate(None, PUNCTUATION).lower()
 
-        song = remove_redundant_tokens(song)
-        # song = '<s> ' * 5 + song + ' <\s>' * 5 # start/end tags
-        
-        out_file.write(song + ' \n')
+            verse = remove_redundant_tokens(verse)
+            verse = '<nv> ' + verse + ' <nv>'
+
+            print verse
+            print
+            
+            out_file.write(verse + ' \n')
         
 
 if __name__ == '__main__':
