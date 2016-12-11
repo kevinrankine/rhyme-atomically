@@ -22,9 +22,12 @@ end
 function neural_network(X, y, word_vectors)
    local bsize = 8
    local lsize = 50
+   local eta = 1e-1
+
 
    local nwords = word_vectors:size(1)
    local d_in = word_vectors:size(2)
+   local d_hid = 400
    
    local model = nn.Sequential()
    
@@ -33,8 +36,8 @@ function neural_network(X, y, word_vectors)
 
    model:add(LT)
    model:add(nn.SplitTable(2))
-   model:add(nn.Sequencer(nn.GRU(d_in, d_in)))
-   model:add(nn.Sequencer(nn.Linear(d_in, nwords)))
+   model:add(nn.Sequencer(nn.FastLSTM(d_in, d_hid, lsize)))
+   model:add(nn.Sequencer(nn.Linear(d_hid, nwords)))
    model:add(nn.Sequencer(nn.LogSoftMax()))
 
    criterion = nn.SequencerCriterion(nn.ClassNLLCriterion())
@@ -42,9 +45,11 @@ function neural_network(X, y, word_vectors)
    model:cuda()
    criterion:cuda()
 
+   model:remember('neither')
+
    params, gradParams = model:getParameters()
 
-   for ii = 1, X:size(1), bsize do
+   for ii = 1, X:size(1), 0 do
       gradParams:zero()
       
       print (ii)
@@ -58,7 +63,10 @@ function neural_network(X, y, word_vectors)
       local grad = criterion:backward(out, yy)
 
       model:backward(xx, grad)
-      model:updateParameters(1e-3)
+      renorm_grad(5, gradParams)
+      model:updateParameters(eta)
+
+      print (loss)
    end
 end
 
@@ -70,6 +78,15 @@ function map(func, array)
    end
    
    return new_array
+end
+
+function renorm_grad(thresh, gradParams)
+   local norm = gradParams:norm()
+
+   if (norm > thresh) then
+      gradParams:div(norm / thresh)
+   end
+   
 end
 
 main()
