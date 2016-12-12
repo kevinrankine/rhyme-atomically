@@ -38,7 +38,7 @@ function neural_network(X_train, y_train, word_vectors, X_valid, y_valid)
    local bsize = 32
    local lsize = 15 -- 20
    local eta = 1e-0
-   local nepochs = 10
+   local nepochs = 1-
 
    local nwords = word_vectors:size(1)
    local d_in = 100 -- word_vectors:size(2)

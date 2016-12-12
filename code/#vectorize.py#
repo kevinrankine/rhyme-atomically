@@ -2,7 +2,6 @@ import sys
 import h5py
 from nltk.model import build_vocabulary
 import numpy as np
-import pandas as pd
 
 WORD_VECTOR_FILE = './data/50-vectors.txt'
 LYRICS_FILE = './data/processed-50-cent.txt'
@@ -10,7 +9,6 @@ LYRICS_FILE = './data/processed-50-cent.txt'
 def load_word_vectors(word_vector_file, vocab):
     word_to_index = {}
     word_vectors = []
-    index_words = []
     
     with open(word_vector_file) as f:
         print f.readline()
@@ -25,19 +23,15 @@ def load_word_vectors(word_vector_file, vocab):
                 word_vectors.append(vector)
                 
                 word_to_index[word] = index
-                index_words.append(word)
-                
                 index = index + 1
             else:
                 pass
                 
     word_to_index['<unk>'] = len(word_to_index) + 1
     word_vectors.append([0 for _ in xrange(len(word_vectors[0]))])
-    index_words.append('<unk>')
 
     word_to_index['<pad>'] = len(word_to_index) + 1
     word_vectors.append([0 for _ in xrange(len(word_vectors[0]))])
-    index_words.append('<pad>')
 
     def mapping(x):
         if x in word_to_index:
@@ -45,7 +39,7 @@ def load_word_vectors(word_vector_file, vocab):
         else:
             return word_to_index['<unk>']
     
-    return mapping, np.array(word_vectors, dtype=np.float32), index_words
+    return mapping, np.array(word_vectors, dtype=np.float32)
 
 def main(in_file_name):
     sentences = map(lambda x : x.split(' '), open(LYRICS_FILE, 'r').read().split('\n'))
@@ -53,12 +47,12 @@ def main(in_file_name):
     text = filter(lambda x : x != '', text)
     
     vocab = build_vocabulary(1, text)
-    vocab = filter(lambda x : x[1] >= 10, vocab.items())
+    vocab = filter(lambda x : x[1] >= 5, vocab.items())
     vocab = map(lambda x : x[0], vocab)
 
     print ("The vocabulary has %d words in it" % len(vocab))
     
-    word_to_index, word_vectors, index_words = load_word_vectors(WORD_VECTOR_FILE, vocab)
+    word_to_index, word_vectors = load_word_vectors(WORD_VECTOR_FILE, vocab)
 
     inf = open(in_file_name, 'r')
 
@@ -80,7 +74,7 @@ def main(in_file_name):
     X = filter(lambda x : len(x) >= min_len and len(x) <= max_len, X)
 
 
-    X = map(lambda x : x + (max_len - len(x)) * [word_to_index('<pad>')], X)
+    X = map(lambda x : (max_len - len(x)) * [word_to_index('<pad>')] + x, X)
     
     y = np.array(map(lambda x : x[1:] + [word_to_index('</s>')], X), dtype=np.int32)
     X = np.array(X, dtype=np.int32)
@@ -92,9 +86,5 @@ def main(in_file_name):
         f['y'] = y
         f['word_vectors'] = word_vectors
 
-    index_words_file = open('data/index_words.txt', 'w+')
-    
-    for word in index_words:
-        index_words_file.write(word+'\n')
 if __name__ == '__main__':
     main(LYRICS_FILE)
